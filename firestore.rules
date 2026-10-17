@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // The dashboard can read aggregate stats, task status, the request log,
+    // job progress and compiled functions in realtime.
+    match /meta/{doc}       { allow read: if true; allow write: if false; }
+    match /tasks/{task}     { allow read: if true; allow write: if false; }
+    match /logs/{log}       { allow read: if true; allow write: if false; }
+    match /jobs/{job}       { allow read: if true; allow write: if false; }
+    match /compiled/{task}  { allow read: if true; allow write: if false; }
+    // Raw training data (full prompts and answers) is never exposed to browsers.
+    match /tasks/{task}/training/{doc} { allow read, write: if false; }
+    // Only the Cloud Run backend (Admin SDK) writes.
+  }
+}

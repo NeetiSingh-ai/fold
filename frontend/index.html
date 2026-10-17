@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fold · Fold repeated AI calls into free code</title>
+<meta name="description" content="Fold watches your Gemini traffic, finds the calls that are really just rules, and compiles them into verified code that runs for free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M4 6l12 4 12-4v20l-12 4-12-4z' fill='%23e8572a'/><path d='M16 10v20' stroke='%23fff' stroke-width='2'/></svg>">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><path d="M4 8 20 13 36 8v24l-16 5-16-5z" fill="var(--accent)"/><path d="M20 13v24" stroke="var(--paper)" stroke-width="2.4"/><path d="M4 8 20 13 36 8 20 3z" fill="var(--accent-2)"/></svg>
+    <div>
+      <div class="name">Fold</div>
+      <div class="by">by Origamind</div>
+    </div>
+  </div>
+  <nav>
+    <a href="#how">How it works</a>
+    <a href="#workloads">Workloads</a>
+    <a href="#playground">Playground</a>
+    <a href="#api">API</a>
+  </nav>
+  <div class="live"><span class="dot" id="liveDot"></span><span id="liveTxt">connecting…</span></div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">AI cost, cut at the source</p>
+    <h1>Stop paying an LLM<br>for work <em>code</em> can do.</h1>
+    <p class="lede">Most production AI calls repeat the same job: pull a date from an invoice, map an item to a category. Fold watches your Gemini traffic, finds those calls, has Gemini write and prove a function that does the same job, and then serves them as free code. Anything unusual still goes to Gemini.</p>
+  </div>
+  <div class="kpis" id="kpis">
+    <div class="kpi"><span class="k-label">Calls served</span><span class="k-val" id="kCalls">0</span></div>
+    <div class="kpi hl"><span class="k-label">Served by folded code</span><span class="k-val" id="kShare">0%</span></div>
+    <div class="kpi"><span class="k-label">Gemini spend</span><span class="k-val" id="kSpend">$0</span></div>
+    <div class="kpi good"><span class="k-label">Saved</span><span class="k-val" id="kSaved">$0</span></div>
+    <div class="kpi"><span class="k-label">Energy avoided</span><span class="k-val" id="kEnergy">0 Wh</span></div>
+    <div class="kpi"><span class="k-label">Quality checks passed</span><span class="k-val" id="kShadow">–</span></div>
+    <div class="kpi wide good"><span class="k-label">Projected saving at 1M calls / month, at today's fold rate</span><span class="k-val" id="kProj">$0</span></div>
+  </div>
+</section>
+
+<section id="how" class="how">
+  <h2>How Fold works</h2>
+  <ol class="steps">
+    <li><b>Watch</b><span>Your app calls Gemini through Fold's gateway. Every answer is logged to Firestore.</span></li>
+    <li><b>Analyse</b><span>Gemini studies real input/output pairs and decides whether the task is rule-like or truly creative.</span></li>
+    <li><b>Fold</b><span>Gemini writes a small Python function. Fold runs it in a sandbox against real answers and repairs it until it agrees.</span></li>
+    <li><b>Prove</b><span>Calls it never saw are the exam. It goes live only above 98% agreement; unsure cases return to Gemini.</span></li>
+    <li><b>Guard</b><span>A sample of live answers is re-checked by Gemini. If agreement drops, Fold reverts automatically.</span></li>
+  </ol>
+</section>
+
+<section id="workloads">
+  <div class="sec-head">
+    <h2>Workloads</h2>
+    <p>Three real-world jobs a company sends to Gemini every day. Send some traffic, then press <b>Fold it</b>.</p>
+  </div>
+  <div class="tasks" id="tasks"></div>
+</section>
+
+<section id="playground" class="play">
+  <div class="sec-head">
+    <h2>Playground</h2>
+    <p>Send one request through the gateway and see where it goes: folded code (free, instant) or Gemini.</p>
+  </div>
+  <div class="play-grid">
+    <div class="card">
+      <label for="pTask">Workload</label>
+      <select id="pTask"></select>
+      <label for="pInput">Input</label>
+      <textarea id="pInput" rows="9" spellcheck="false"></textarea>
+      <div class="row">
+        <button class="ghost" id="pSample">Random real-world sample</button>
+        <button class="primary" id="pRun">Send request</button>
+      </div>
+    </div>
+    <div class="card result" id="pResult"><p class="muted">The result shows here.</p></div>
+  </div>
+</section>
+
+<section class="logs">
+  <div class="sec-head"><h2>Live gateway log</h2><p>Streamed from Firestore as requests arrive.</p></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Time</th><th>Workload</th><th>Route</th><th class="num">Latency</th><th class="num">Cost</th><th>Input</th></tr></thead>
+      <tbody id="logBody"><tr><td colspan="6" class="muted">No requests yet.</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="api" class="api">
+  <div class="sec-head"><h2>Drop-in API</h2><p>Change one URL in your app. Fold decides per request whether Gemini is needed.</p></div>
+<pre class="code"><code>curl -X POST <span id="apiBase"></span>/v1/run \
+  -H "Content-Type: application/json" \
+  -d '{"task": "material_normalize", "input": "Hex bolt M12x50 zinc plated"}'
+
+# -> {"route": "compiled", "output": {"category": "FASTENER", "base_uom": "EA"}, "cost_usd": 0.0, ...}</code></pre>
+</section>
+</main>
+
+<footer>
+  <span>Fold · Team Origamind · Built on Gemini, Cloud Run, Firestore and Firebase</span>
+  <span class="muted">Energy figures use Google's published median of 0.24 Wh and 0.03 gCO₂e per Gemini text prompt.</span>
+</footer>
+
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <button class="close" id="dClose" aria-label="Close">×</button>
+    <h3 id="dTitle">Folding…</h3>
+    <div id="dBody"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
